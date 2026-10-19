@@ -86,6 +86,7 @@ Column {
     visible: search.active
     width: parent.width
     placeholderText: search.placeholderText
+    accessibleName: search.placeholderText
     foreground: search.foreground
     Keys.onEscapePressed: search.stop()
     Keys.onReturnPressed: search.pickSelected()
