@@ -1,5 +1,8 @@
 #!/bin/bash
-source "$(dirname "$0")/base-test.sh"
+
+set -euo pipefail
+
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 # Quickshell gives one polkit listener to the first agent of a shell and none
 # to an agent created while it is held, and registers an agent only once, when
