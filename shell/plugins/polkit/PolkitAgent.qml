@@ -207,8 +207,9 @@ Item {
   // another agent in this shell holds one (a clone enabled live, created
   // before the agent it replaces is destroyed). Either way it stays
   // unregistered, silently, until the shell restarts. Recreate it until it
-  // registers, backing off to a minute. The first wait is long enough that the
-  // agent is never destroyed while its registration is still in flight.
+  // registers, backing off to a minute. The first wait gives a registration
+  // still in flight time to finish: Quickshell cannot cancel one, and destroying
+  // the agent before it completes is unsafe.
   Timer {
     id: registerRetry
     interval: Math.min(60000, root.registerRetryInterval * Math.pow(2, Math.min(root.registerAttempts, 5)))
