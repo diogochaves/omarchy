@@ -212,3 +212,22 @@ done
 [[ ! -f $cover ]] || fail "the superseded intro finishes cleanup"
 (( $(grep -c '^hypr-reload$' "$log") == 1 )) || fail "the superseded intro cannot reload during a newer theme"
 pass "superseded intros do not reload the compositor"
+
+# A video background leaves no still to cover the switch with, so the shell's
+# layer stays visible until the intro starts: the new still waits for it.
+for attempt in {1..250}; do
+  pgrep -f "^/bin/bash $ROOT/bin/omarchy-theme-set (alpha|beta)\$" >/dev/null || break
+  sleep 0.02
+done
+mkdir -p "$home/Videos"
+printf 'video\n' >"$home/Videos/loop.mp4"
+ln -nsf "$home/Videos/loop.mp4" "$state/background"
+printf '%s\n' "$state/theme/backgrounds/2-road.webp" >"$home/.local/state/omarchy/theme-backgrounds/beta"
+set_theme beta
+wait_command '^hypr-reload$'
+grep -q '^shell: shell prepareThemeIntro  ' "$log" || fail "a video background has no outgoing cover" "$(cat "$log")"
+handover=$(grep -n -m1 '^shell: background setInstant ' "$log" | cut -d: -f1)
+intro=$(grep -n -m1 '^owe: intro ' "$log" | cut -d: -f1)
+[[ -n $handover && -n $intro ]] && (( intro < handover )) || fail "without a cover the new still follows the intro" "$(cat "$log")"
+(( $(grep -c '^shell: background setInstant ' "$log") == 1 )) || fail "without a cover the new still is handed over once" "$(cat "$log")"
+pass "without an outgoing cover the new still is handed over after the intro"
