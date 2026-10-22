@@ -70,6 +70,8 @@ if [[ -n ${TEST_GATE_DIR:-} ]]; then
   else
     echo "ready"
   fi
+elif [[ $2 == "themeIntroCoverStatus" ]]; then
+  echo "ready"
 fi
 STUB
 cat >"$commands/owe" <<'STUB'
@@ -115,9 +117,14 @@ grep -Fxq "owe: intro --start first-frame --refresh $state/theme/backgrounds/int
 [[ $(readlink "$state/background") == "$state/theme/backgrounds/2-road.webp" ]] || fail "the remembered background is selected"
 ! grep -qE '^shell: background (prepare|themeTransition)' "$log" || fail "an intro replaces the normal still transition"
 [[ $(<"$home/.local/state/omarchy/background-intro.session-id") == already-consumed ]] || fail "a theme switch leaves login consumption unchanged"
-# The shell holds the old theme's still, whose path the swap deleted, and loads
-# it again when OWE hands the desktop back, so it gets the new one either way.
+# The shell holds the old theme's still and OWE shows its layer again when the
+# intro ends, so it gets the new one under the cover, before the intro plays.
 wait_command "^shell: background setInstant $state/theme/backgrounds/2-road.webp\$"
+handover=$(grep -n -m1 '^shell: background setInstant ' "$log" | cut -d: -f1)
+intro=$(grep -n -m1 '^owe: intro ' "$log" | cut -d: -f1)
+(( handover < intro )) || fail "the shell gets the new still before the intro plays" "$(cat "$log")"
+wait_command '^hypr-reload$'
+(( $(grep -c '^shell: background setInstant ' "$log") == 1 )) || fail "the new still is handed over once" "$(cat "$log")"
 pass "switching themes plays the matching intro for the remembered background"
 
 set_theme beta
